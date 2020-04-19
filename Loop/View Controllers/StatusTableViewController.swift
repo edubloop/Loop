@@ -353,10 +353,8 @@ final class StatusTableViewController: ChartsTableViewController {
             if currentContext.contains(.carbs) {
                 reloadGroup.enter()
                 manager.carbStore.getCarbsOnBoardValues(start: startDate, effectVelocities: manager.settings.dynamicCarbAbsorptionEnabled ? state.insulinCounteractionEffects : nil) { (values) in
-                    DispatchQueue.main.async {
-                        cobValues = values
-                        reloadGroup.leave()
-                    }
+                    cobValues = values
+                    reloadGroup.leave()
                 }
             }
 
@@ -366,57 +364,49 @@ final class StatusTableViewController: ChartsTableViewController {
         if currentContext.contains(.glucose) {
             reloadGroup.enter()
             self.deviceManager.loopManager.glucoseStore.getCachedGlucoseSamples(start: startDate) { (values) -> Void in
-                DispatchQueue.main.async {
-                    glucoseValues = values
-                    reloadGroup.leave()
-                }
+                glucoseValues = values
+                reloadGroup.leave()
             }
         }
 
         if currentContext.contains(.insulin) {
             reloadGroup.enter()
             deviceManager.loopManager.doseStore.getInsulinOnBoardValues(start: startDate) { (result) -> Void in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .failure(let error):
-                        self.log.error("DoseStore failed to get insulin on board values: %{public}@", String(describing: error))
-                        retryContext.update(with: .insulin)
-                        iobValues = []
-                    case .success(let values):
-                        iobValues = values
-                    }
-                    reloadGroup.leave()
+                switch result {
+                case .failure(let error):
+                    self.log.error("DoseStore failed to get insulin on board values: %{public}@", String(describing: error))
+                    retryContext.update(with: .insulin)
+                    iobValues = []
+                case .success(let values):
+                    iobValues = values
                 }
+                reloadGroup.leave()
             }
 
             reloadGroup.enter()
             deviceManager.loopManager.doseStore.getNormalizedDoseEntries(start: startDate) { (result) -> Void in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .failure(let error):
-                        self.log.error("DoseStore failed to get normalized dose entries: %{public}@", String(describing: error))
-                        retryContext.update(with: .insulin)
-                        doseEntries = []
-                    case .success(let doses):
-                        doseEntries = doses
-                    }
-                    reloadGroup.leave()
+                switch result {
+                case .failure(let error):
+                    self.log.error("DoseStore failed to get normalized dose entries: %{public}@", String(describing: error))
+                    retryContext.update(with: .insulin)
+                    doseEntries = []
+                case .success(let doses):
+                    doseEntries = doses
                 }
+                reloadGroup.leave()
             }
 
             reloadGroup.enter()
             deviceManager.loopManager.doseStore.getTotalUnitsDelivered(since: Calendar.current.startOfDay(for: Date())) { (result) in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .failure:
-                        retryContext.update(with: .insulin)
-                        totalDelivery = nil
-                    case .success(let total):
-                        totalDelivery = total.value
-                    }
-
-                    reloadGroup.leave()
+                switch result {
+                case .failure:
+                    retryContext.update(with: .insulin)
+                    totalDelivery = nil
+                case .success(let total):
+                    totalDelivery = total.value
                 }
+
+                reloadGroup.leave()
             }
         }
 
